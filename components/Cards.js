@@ -5,6 +5,8 @@ import Link from "next/link";
 import React from "react";
 
 export default function Cards(props) {
+  const formatTime = (timeString) => {};
+
   return (
     <>
       {/* Upcoming Events Section */}
@@ -25,8 +27,10 @@ export default function Cards(props) {
               {props.title}
             </h3>
             <div className="w-full flex justify-between text-gray-600">
-              <p>{props.eDate}</p>
-              <p>{props.eTime}</p>
+              <p>{props.date}</p>
+              <p>
+                {props.sTime}-{props.eTime}
+              </p>
             </div>
           </button>
         </div>

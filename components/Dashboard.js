@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Cards from "./Cards";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/config";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
@@ -48,12 +49,14 @@ export default function Dashboard() {
 
       {/* Create Event Button */}
       <div className="mb-10">
-        <button
-          className="bg-white shadow-md text-blue-900 hover:bg-blue-900 hover:text-white w-full lg:w-full text-lg py-8 rounded-lg font-bold transition-colors duration-300 ease-in-out"
-          style={{ fontFamily: "Poppins" }}
-        >
-          Create an Event +
-        </button>
+        <Link href="/create">
+          <button
+            className="bg-white shadow-md text-blue-900 hover:bg-blue-900 hover:text-white w-full lg:w-full text-lg py-8 rounded-lg font-bold transition-colors duration-300 ease-in-out"
+            style={{ fontFamily: "Poppins" }}
+          >
+            Create an Event +
+          </button>
+        </Link>
       </div>
 
       {/* Upcoming Events Section */}
@@ -76,8 +79,10 @@ export default function Dashboard() {
                 <Cards
                   key={event.id}
                   title={event.name}
-                  eDate={event.date}
-                  eTime={event.time}
+                  eTime={event.endTime}
+                  sTime={event.startTime}
+                  status={event.status}
+                  date={event.date}
                 />
               ))}
         </div>

@@ -60,8 +60,10 @@ export default function Events() {
               <Cards
                 key={event.id}
                 title={event.name}
-                eDate={event.date}
-                eTime={event.time}
+                eTime={event.endTime}
+                sTime={event.startTime}
+                status={event.status}
+                date={event.date}
               />
             ))}
         </div>
