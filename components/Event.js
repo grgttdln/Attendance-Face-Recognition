@@ -2,29 +2,60 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import Cards from "./Cards";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/config";
 
-export default function Events() {
-  const [events, setEvents] = useState([]);
+export default function Events(props) {
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchEvent = async () => {
+      if (!props.eventId) {
+        setError("No event ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const eventsCollection = collection(db, "events");
-        const eventSnapshot = await getDocs(eventsCollection);
-        const eventList = eventSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setEvents(eventList); // Set the fetched events
+        const eventRef = doc(db, "events", props.eventId);
+        const eventDoc = await getDoc(eventRef);
+
+        if (eventDoc.exists()) {
+          setEvent({
+            id: eventDoc.id,
+            ...eventDoc.data(),
+          });
+        } else {
+          setError("Event not found");
+        }
       } catch (error) {
-        console.error("Error fetching events: ", error);
+        console.error("Error fetching event: ", error);
+        setError("Failed to load event data");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchEvents();
-  }, []);
+    fetchEvent();
+  }, [props.eventId]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+        <div className="text-blue-900">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+        <div className="text-red-600">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
@@ -40,11 +71,12 @@ export default function Events() {
           className="text-2xl font-semibold text-white mb-1"
           style={{ fontFamily: "Poppins" }}
         >
-          EVENT NAME *
+          {event?.title || props.eventId}
         </h1>
         <div className="w-full flex justify-between font-semibold text-white">
-          <p>January 1, 2024</p>
-          <p>10:00 - 12:00 PM</p>
+          <p>{event?.date || "Date not available"}</p>
+          <p>{event?.startTime || "Time not available"}</p>
+          <p>{event?.endTime || "Time not available"}</p>
         </div>
       </div>
 
