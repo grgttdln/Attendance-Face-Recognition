@@ -4,13 +4,19 @@ import { FiGrid, FiLogOut, FiClock, FiMenu } from "react-icons/fi";
 import { BiParty } from "react-icons/bi"; // Import BiParty icon
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation"; // Import usePathname
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname(); // Get the current path
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
+
+  // Function to check if the link is active and return appropriate class
+  const isActive = (link) => (pathname === link ? "bg-blue-100" : "");
 
   return (
     <>
@@ -44,59 +50,65 @@ export default function Sidebar() {
         </div>
 
         {/* Sidebar Navigation */}
-        <div className="mt-10 flex flex-col space-y-8">
-          <span className="text-gray-500 text-sm pl-4 lg:text-sm" style={{ fontFamily: "Poppins" }}>
+        <div className="mt-10 flex flex-col space-y-4">
+          <span
+            className="text-gray-500 text-sm pl-4 lg:text-sm"
+            style={{ fontFamily: "Poppins" }}
+          >
             OVERVIEW
           </span>
 
           {/* Dashboard Button */}
-          <button
-            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
-            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
-          >
-            <FiGrid className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
-            <span className="lg:text-base text-sm">Dashboard</span> {/* Smaller text for small screens */}
-          </button>
-
-          {/* Events Button with BiParty Icon */}
-          <button
-            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
-            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
-          >
-            <BiParty className="lg:text-2xl text-xl" /> {/* BiParty icon */}
-            <span className="lg:text-base text-sm">Events</span> {/* Smaller text for small screens */}
-          </button>
-
-          {/* History Button */}
-          <button
-            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
-            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
-          >
-            <FiClock className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
-            <span className="lg:text-base text-sm">History</span> {/* Smaller text for small screens */}
-          </button>
-
-          {/* Logout Button on Small Screens */}
-          <div className="lg:hidden">
+          <Link href="/dashboard">
             <button
-              className="btn btn-ghost flex items-center gap-5 text-red-600 lg:text-lg text-base font-semibold"
+              className={`btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold w-full py-3 px-4 rounded-lg ${isActive(
+                "/dashboard"
+              )}`}
               style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
             >
-              <FiLogOut className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
-              <span className="lg:text-base text-sm">Log out</span> {/* Smaller text for small screens */}
+              <FiGrid className="lg:text-2xl text-xl" />{" "}
+              <span className="lg:text-base text-sm">Dashboard</span>
             </button>
-          </div>
+          </Link>
+
+          {/* Events Button */}
+          <Link href="/events">
+            <button
+              className={`btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold w-full py-3 px-4 rounded-lg ${isActive(
+                "/events"
+              )}`}
+              style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
+            >
+              <BiParty className="lg:text-2xl text-xl" />{" "}
+              <span className="lg:text-base text-sm">Events</span>
+            </button>
+          </Link>
+
+          {/* History Button */}
+          <Link href="/history">
+            <button
+              className={`btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold w-full py-3 px-4 rounded-lg ${isActive(
+                "/history"
+              )}`}
+              style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
+            >
+              <FiClock className="lg:text-2xl text-xl" />{" "}
+              <span className="lg:text-base text-sm">History</span>
+            </button>
+          </Link>
         </div>
 
-        {/* Logout Button on Large Screens */}
-        <div className="mt-auto hidden lg:block">
-          <button
-            className="btn btn-ghost flex items-center gap-5 text-red-600 lg:text-lg text-base font-semibold"
-            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
-          >
-            <FiLogOut className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
-            <span className="lg:text-base text-sm">Log out</span> {/* Smaller text for small screens */}
-          </button>
+        {/* Logout Button - Positioned at the Bottom */}
+        <div className="mt-auto">
+          <Link href="/">
+            <button
+              className="btn btn-ghost flex items-center gap-5 text-red-600 lg:text-lg text-base font-semibold w-full py-3 px-4 rounded-lg"
+              style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
+            >
+              <FiLogOut className="lg:text-2xl text-xl" />{" "}
+              <span className="lg:text-base text-sm">Log out</span>
+            </button>
+          </Link>
         </div>
       </div>
 

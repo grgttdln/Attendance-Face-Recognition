@@ -3,28 +3,19 @@
 import React from "react";
 import Image from "next/image"; // Correct import for Next.js Image component
 
-export default function Dashboard() {
+export default function Events() {
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
       {/* Title */}
       <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
         <h1 className="text-1xl font-medium text-white mb-3" style={{ fontFamily: "Poppins" }}>
-          Dashboard
+          Events
         </h1>
         <h1 className="text-2xl font-semibold text-white" style={{ fontFamily: "Poppins" }}>
-          Seamlessly track attendance with advanced facial recognition technology, ensuring accurate, secure, and effortless check-ins for every event.
+            All Upcoming Events
         </h1>
       </div>
 
-      {/* Create Event Button */}
-      <div className="mb-10">
-        <button
-          className="bg-white shadow-md text-blue-900 hover:bg-blue-900 hover:text-white w-full lg:w-full text-lg py-8 rounded-lg font-bold transition-colors duration-300 ease-in-out"
-          style={{ fontFamily: "Poppins" }}
-        >
-          Create an Event +
-        </button>
-      </div>
 
       {/* Upcoming Events Section */}
       <div className="bg-transparent">
@@ -78,6 +69,7 @@ export default function Dashboard() {
         </button>
 
 
+          {/* Event Card */}
         {/* Event Card */}
         <button
             className="bg-white shadow-md p-6 rounded-lg flex flex-col items-center border border-gray-200 hover:shadow-xl transition-shadow"
@@ -97,6 +89,7 @@ export default function Dashboard() {
             </p>
             </div>
         </button>
+
         </div>
       </div>
     </div>

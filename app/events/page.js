@@ -1,7 +1,11 @@
 import Sidebar from "@/components/Sidebar";
+import Events from '@/components/Events';
 
-export default function Events() {
+export default function Home() {
   return (
-    <Sidebar/>
+    <div className="flex">
+      <Sidebar />
+      <Events />
+    </div>
   );
 }

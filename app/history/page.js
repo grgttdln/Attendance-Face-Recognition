@@ -1,7 +1,11 @@
 import Sidebar from "@/components/Sidebar";
+import History from '@/components/History';
 
-export default function History() {
+export default function Home() {
   return (
-    <Sidebar/>
+    <div className="flex">
+      <Sidebar />
+      <History />
+    </div>
   );
 }
