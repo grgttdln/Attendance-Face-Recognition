@@ -1,83 +1,112 @@
-import { FiLogOut } from "react-icons/fi";
-import { BiParty } from "react-icons/bi";
-import { LuLayoutDashboard } from "react-icons/lu";
-import { MdHistory } from "react-icons/md";
-import Link from "next/link";
+"use client";
 
+import { FiGrid, FiLogOut, FiClock, FiMenu } from "react-icons/fi";
+import { BiParty } from "react-icons/bi"; // Import BiParty icon
+import Image from "next/image";
+import { useState } from "react";
 
 export default function Sidebar() {
-return (
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
     <>
-      <div className="h-screen w-1/4 bg-white shadow-xl rounded-tr-3xl rounded-br-3xl p-6 flex flex-col">
-        {/* Sidebar Content */}
-        <div className="flex flex-col space-y-4">
-          {/* Logo */}
-          <div className="flex items-center space-x-2 mt-2 ml-5 mb-8">
-            <img
-              src="/image.png"
-              alt="logo"
-              className="w-16 h-16 rounded-full"
-            />
-            <span className="text-3xl p-2 text-blue-900 font-bold">Presenza</span>
-          </div>
-          
+      {/* Toggle Button for Small Screens */}
+      <div className="lg:hidden p-4">
+        <button onClick={toggleSidebar} className="text-blue-900 text-3xl">
+          <FiMenu />
+        </button>
+      </div>
 
-          <span className="text-gray-500 text-sm pl-4 mb-4">OVERVIEW</span>
-          <div className="mt-auto">
+      {/* Sidebar */}
+      <div
+        className={`h-screen bg-white shadow-lg rounded-tr-3xl rounded-br-3xl p-6 flex flex-col fixed lg:static z-50 transition-transform duration-300
+        ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 w-72`}
+      >
+        {/* Logo and Sidebar Title */}
+        <div className="flex items-center space-x-4">
+          <Image
+            src="/image.png"
+            alt="Logo"
+            width={75} // Default size for larger screens
+            height={75} // Default size for larger screens
+            className="lg:w-[75px] lg:h-[75px] w-[50px] h-[50px]" // Smaller for small screens
+          />
+          <span
+            className="text-3xl font-semibold text-blue-800 mt-1 lg:text-3xl text-xl" // Smaller text for small screens
+            style={{ fontFamily: "Poppins", textAlign: "center" }}
+          >
+            Presenza
+          </span>
+        </div>
+
+        {/* Sidebar Navigation */}
+        <div className="mt-10 flex flex-col space-y-8">
+          <span className="text-gray-500 text-sm pl-4 lg:text-sm text-xs" style={{ fontFamily: "Poppins" }}>
+            OVERVIEW
+          </span>
+
           {/* Dashboard Button */}
-          <Link href="/dashboard">
           <button
-           //  onClick={handleDashboard}
-            className="btn btn-ghost flex items-center pr-20 gap-2 text-blue-900 text-lg mb-4"
+            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
+            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
           >
-            <LuLayoutDashboard className="text-2xl" />
-            <span>Dashboard</span>
+            <FiGrid className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
+            <span className="lg:text-base text-sm">Dashboard</span> {/* Smaller text for small screens */}
           </button>
-          </Link>
 
-          {/* Cards Button */}
-          <Link href="/events">
+          {/* Events Button with BiParty Icon */}
           <button
-            // onClick={handleCards}
-            className="btn btn-ghost flex items-center pr-20 gap-2 text-blue-900 text-lg mb-4"
+            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
+            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
           >
-            <BiParty className="text-2xl" />
-            <span>Events</span>
+            <BiParty className="lg:text-2xl text-xl" /> {/* BiParty icon */}
+            <span className="lg:text-base text-sm">Events</span> {/* Smaller text for small screens */}
           </button>
-          </Link>
 
           {/* History Button */}
-          <Link href="/history">
           <button
-            // onClick={handleCards}
-            className="btn btn-ghost flex items-center pr-20 gap-2 text-blue-900 text-lg mb-4"
+            className="btn btn-ghost flex items-center gap-3 text-blue-900 lg:text-lg text-base font-bold"
+            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
           >
-            <MdHistory className="text-2xl" />
-            <span>History</span>
+            <FiClock className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
+            <span className="lg:text-base text-sm">History</span> {/* Smaller text for small screens */}
           </button>
-          </Link>
 
-
+          {/* Logout Button on Small Screens */}
+          <div className="lg:hidden">
+            <button
+              className="btn btn-ghost flex items-center gap-5 text-red-600 lg:text-lg text-base font-semibold"
+              style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
+            >
+              <FiLogOut className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
+              <span className="lg:text-base text-sm">Log out</span> {/* Smaller text for small screens */}
+            </button>
           </div>
         </div>
 
-        {/* Logout Button */}
-        <div className="mt-auto">
-          <Link href="/">
+        {/* Logout Button on Large Screens */}
+        <div className="mt-auto hidden lg:block">
           <button
-           //  onClick={handleLogout}
-            className="btn btn-ghost flex items-center gap-2 text-red-600 text-lg"
+            className="btn btn-ghost flex items-center gap-5 text-red-600 lg:text-lg text-base font-semibold"
+            style={{ justifyContent: "flex-start", fontFamily: "Poppins" }}
           >
-            <FiLogOut className="text-2xl" />
-            <span>Log out</span>
+            <FiLogOut className="lg:text-2xl text-xl" /> {/* Smaller icons for small screens */}
+            <span className="lg:text-base text-sm">Log out</span> {/* Smaller text for small screens */}
           </button>
-          </Link>
         </div>
       </div>
+
+      {/* Overlay for small screens when sidebar is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 lg:hidden z-40"
+          onClick={toggleSidebar}
+        />
+      )}
     </>
-)
-
-
+  );
 }
-
-
