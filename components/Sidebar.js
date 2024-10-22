@@ -36,7 +36,7 @@ export default function Sidebar() {
             className="lg:w-[75px] lg:h-[75px] w-[50px] h-[50px]" // Smaller for small screens
           />
           <span
-            className="text-3xl font-semibold text-blue-800 mt-1 lg:text-3xl text-xl" // Smaller text for small screens
+            className="text-3xl font-semibold text-blue-800 mt-1 lg:text-xl" // Smaller text for small screens
             style={{ fontFamily: "Poppins", textAlign: "center" }}
           >
             Presenza
@@ -45,7 +45,7 @@ export default function Sidebar() {
 
         {/* Sidebar Navigation */}
         <div className="mt-10 flex flex-col space-y-8">
-          <span className="text-gray-500 text-sm pl-4 lg:text-sm text-xs" style={{ fontFamily: "Poppins" }}>
+          <span className="text-gray-500 text-sm pl-4 lg:text-sm" style={{ fontFamily: "Poppins" }}>
             OVERVIEW
           </span>
 
