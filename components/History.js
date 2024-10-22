@@ -5,6 +5,7 @@ import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore"; // Firestore imports
 import { db } from "../firebase/config"; // Your Firebase configuration
 import Link from "next/link"; // Import Link for navigation
+import Cards from "./Cards"; // Import the Cards component
 
 const formatTime = (timeString) => {
   const [hours, minutes] = timeString.split(":");
@@ -68,30 +69,14 @@ export default function History() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pastEvents.length > 0 ? (
             pastEvents.map((event) => (
-              <Link key={event.id} href={`/historyevents?id=${event.id}`}>
-                <button
-                  className="bg-white shadow-md p-6 rounded-lg flex flex-col items-center border border-gray-200 hover:shadow-xl transition-shadow"
-                  style={{ fontFamily: "Poppins" }}
-                >
-                  <Image
-                    src={event.image || "https://via.placeholder.com/400x250"}
-                    width={400}
-                    height={250}
-                    alt={event.name}
-                    className="mb-4"
-                  />
-                  <h3 className="text-xl font-bold text-blue-900 mb-2 text-left w-full">
-                    {event.name}
-                  </h3>
-                  <div className="w-full text-gray-600 text-left">
-                    <p>
-                      {new Date(event.date).toLocaleDateString()} &nbsp;
-                      {formatTime(event.startTime)} -{" "}
-                      {event.endTime ? formatTime(event.endTime) : ""}
-                    </p>
-                  </div>
-                </button>
-              </Link>
+              <Cards
+                key={event.id}
+                title={event.name}
+                eTime={event.endTime}
+                sTime={event.startTime}
+                status={event.status}
+                date={event.date}
+              />
             ))
           ) : (
             <p>No past events found.</p>

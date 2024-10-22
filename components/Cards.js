@@ -5,7 +5,20 @@ import Link from "next/link";
 import React from "react";
 
 export default function Cards(props) {
-  const formatTime = (timeString) => {};
+  // Function to format time from "HH:mm" to "h:mm AM/PM"
+  const formatTime = (timeString) => {
+    const [hours, minutes] = timeString.split(":");
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
+  // Function to format date from "YYYY-MM-DD" to "Month Day, Year"
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
 
   return (
     <>
@@ -27,9 +40,9 @@ export default function Cards(props) {
               {props.title}
             </h3>
             <div className="w-full flex justify-between text-gray-600">
-              <p>{props.date}</p>
+              <p>{formatDate(props.date)}</p>
               <p>
-                {props.sTime}-{props.eTime}
+                {formatTime(props.sTime)} - {formatTime(props.eTime)}
               </p>
             </div>
           </button>
