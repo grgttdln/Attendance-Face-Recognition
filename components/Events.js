@@ -69,7 +69,6 @@ export default function Events() {
         </button>
 
 
-          {/* Event Card */}
         {/* Event Card */}
         <button
             className="bg-white shadow-md p-6 rounded-lg flex flex-col items-center border border-gray-200 hover:shadow-xl transition-shadow"
@@ -89,7 +88,6 @@ export default function Events() {
             </p>
             </div>
         </button>
-
         </div>
       </div>
     </div>
