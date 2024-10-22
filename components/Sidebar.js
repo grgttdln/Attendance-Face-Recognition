@@ -29,7 +29,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <div
-        className={`h-screen bg-white shadow-lg rounded-tr-3xl rounded-br-3xl p-6 flex flex-col fixed lg:static z-50 transition-transform duration-300
+        className={`min-h-screen bg-white shadow-lg rounded-tr-3xl rounded-br-3xl p-6 flex flex-col fixed lg:static z-50 transition-transform duration-300
         ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 w-72`}
       >
         {/* Logo and Sidebar Title */}

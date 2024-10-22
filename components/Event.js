@@ -10,6 +10,20 @@ export default function Events(props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const formatTime = (timeString) => {
+    const [hours, minutes] = timeString.split(":");
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
+  // Function to format date from "YYYY-MM-DD" to "Month Day, Year"
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       if (!props.eventId) {
@@ -61,22 +75,31 @@ export default function Events(props) {
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
       {/* Title */}
       <div className="bg-blue-900 mb-8 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
+        {/* Header */}
         <h1
-          className="text-1xl font-medium text-white mb-8"
+          className="text-xl font-medium text-white mb-8"
           style={{ fontFamily: "Poppins" }}
         >
           Presenza
         </h1>
+
+        {/* Event Title */}
         <h1
           className="text-2xl font-semibold text-white mb-1"
           style={{ fontFamily: "Poppins" }}
         >
           {event?.title || props.eventId}
         </h1>
+
+        {/* Date and Time Information */}
         <div className="w-full flex justify-between font-semibold text-white">
-          <p>{event?.date || "Date not available"}</p>
-          <p>{event?.startTime || "Time not available"}</p>
-          <p>{event?.endTime || "Time not available"}</p>
+          {/* Event Date */}
+          <p>{formatDate(event?.date) || "Date not available"}</p>
+          {/* Time Range */}
+          <p>
+            {formatTime(event?.startTime) || "Start Time not available"} -{" "}
+            {formatTime(event?.endTime) || "End Time not available"}
+          </p>
         </div>
       </div>
 

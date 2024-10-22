@@ -28,7 +28,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
+    <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen overflow-hidden">
       {/* Title */}
       <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
         <h1
