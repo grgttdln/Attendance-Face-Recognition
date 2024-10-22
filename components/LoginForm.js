@@ -31,10 +31,10 @@ export default function Home() {
           />
           
           <div className="flex flex-col items-start mt-4"> {/* Wrapped text in a div to maintain left alignment */}
-            <h1 className="text-5xl font-semibold text-blue-600 text-center mt-4" style={{ fontFamily: 'Poppins' }}>
+            <h1 className="text-5xl font-semibold text-blue-900 text-center mt-4" style={{ fontFamily: 'Poppins' }}>
               Presenza
             </h1>
-            <p className="text-xl font-medium text-blue-500 text-left mt-4 mb-6" style={{ fontFamily: 'Poppins' }}>
+            <p className="text-xl font-medium text-blue-800 text-left mt-4 mb-6" style={{ fontFamily: 'Poppins' }}>
               Where your face is your pass.
             </p>
           </div>
