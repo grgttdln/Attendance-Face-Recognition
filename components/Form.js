@@ -7,6 +7,7 @@ import { db } from "../firebase/config";
 import { MdDateRange } from "react-icons/md";
 import { LuCalendarClock } from "react-icons/lu";
 import { doc, setDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 export default function FormEvent() {
   const [name, setName] = useState("");
@@ -14,6 +15,7 @@ export default function FormEvent() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter(); 
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -46,6 +48,7 @@ export default function FormEvent() {
       setDate("");
       setStartTime("");
       setEndTime("");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Error adding document: ", error);
       alert("Error creating event: " + error.message);

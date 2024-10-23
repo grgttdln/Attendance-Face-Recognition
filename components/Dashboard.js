@@ -27,15 +27,18 @@ export default function Dashboard() {
     fetchEvents();
   }, []);
 
+  // Get current date
+  const currentDate = new Date();
+
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen overflow-hidden">
       {/* Title */}
-      <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
+      <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-xl flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
         <h1
           className="text-1xl font-medium text-white mb-3"
           style={{ fontFamily: "Poppins" }}
         >
-          Dashboard
+          Presenza
         </h1>
         <h1
           className="text-2xl font-semibold text-white"
@@ -54,7 +57,7 @@ export default function Dashboard() {
             className="bg-white shadow-md text-blue-900 hover:bg-blue-900 hover:text-white w-full lg:w-full text-lg py-8 rounded-lg font-bold transition-colors duration-300 ease-in-out"
             style={{ fontFamily: "Poppins" }}
           >
-            Create an Event +
+            + Create an Event
           </button>
         </Link>
       </div>
@@ -73,6 +76,11 @@ export default function Dashboard() {
           {/* Event Card */}
           {events &&
             events
+              .filter((event) => {
+                // Filter for upcoming events (date in the future) and status is false
+                const eventDate = new Date(event.date);
+                return eventDate >= currentDate && event.status === false;
+              })
               .sort((a, b) => new Date(a.date) - new Date(b.date)) // Sort by date
               .slice(0, 3) // Get the first 3 after sorting
               .map((event) => (

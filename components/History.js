@@ -28,7 +28,7 @@ export default function History() {
             id: doc.id,
             ...doc.data(),
           }))
-          .filter((event) => new Date(event.date) < new Date());
+          .filter((event) => new Date(event.date) < new Date() && event.status === true);
         setPastEvents(eventList);
       } catch (error) {
         console.error("Error fetching event history: ", error);
@@ -41,12 +41,12 @@ export default function History() {
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
       {/* Title */}
-      <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
+      <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-xl flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
         <h1
           className="text-1xl font-medium text-white mb-3"
           style={{ fontFamily: "Poppins" }}
         >
-          History
+          Presenza
         </h1>
         <h1
           className="text-2xl font-semibold text-white"
@@ -58,12 +58,12 @@ export default function History() {
 
       {/* Past Events Section */}
       <div className="bg-transparent">
-        <h2
+        {/* <h2
           className="text-2xl font-semibold text-blue-800 mb-6"
           style={{ fontFamily: "Poppins" }}
         >
           Your Past Events
-        </h2>
+        </h2> */}
 
         {/* Events List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
