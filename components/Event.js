@@ -11,13 +11,37 @@ export default function Events(props) {
   const [isPressed, setIsPressed] = useState(false);
 
   function extractTimeOnly(timestamp) {
-    const date = new Date(timestamp.seconds * 1000);
+    // Return early if no timestamp provided
+    if (!timestamp) return "";
 
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    let date;
+
+    try {
+      if (typeof timestamp === "string") {
+        date = new Date(timestamp.replace(" ", "T"));
+      } else if (timestamp.seconds) {
+        date = new Date(timestamp.seconds * 1000);
+      } else if (timestamp instanceof Date) {
+        date = timestamp;
+      } else {
+        date = new Date(timestamp);
+      }
+
+      if (isNaN(date.getTime())) {
+        return "";
+      }
+
+      return date
+        .toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+        .toUpperCase();
+    } catch (error) {
+      console.error("Error parsing timestamp:", error);
+      return "";
+    }
   }
 
   const formatTime = (timeString) => {
@@ -158,18 +182,18 @@ export default function Events(props) {
             </thead>
             <tbody>
               {attendees.length > 0 ? (
-                attendees.map((attendee) => (
+                attendees.map((attendee, index) => (
                   <tr key={attendee.id} className="bg-gray-100">
+                    <td className="border p-2">{index + 1 || "N/A"}</td>
                     <td className="border p-2">{attendee.id || "N/A"}</td>
-                    <td className="border p-2">{attendee.name || "N/A"}</td>
                     <td className="border p-2 flex items-center">
                       <div
                         className={`w-4 h-4 inline-block mr-2 ${
-                          attendee.status === "Present"
+                          attendee.status === "attended"
                             ? "bg-green-500"
-                            : attendee.status === "Absent"
+                            : attendee.status === "absent"
                             ? "bg-red-500"
-                            : attendee.status === "Late"
+                            : attendee.status === "late"
                             ? "bg-yellow-500"
                             : "bg-gray-500" // Default color for "N/A" or unknown status
                         }`}
@@ -177,8 +201,8 @@ export default function Events(props) {
                       {attendee.status || "N/A"}
                     </td>
                     <td className="border p-2">
-                      {attendee.checkInTime
-                        ? formatTime(attendee.checkInTime)
+                      {attendee.time
+                        ? extractTimeOnly(attendee.time)
                         : "Not checked in"}
                     </td>
                   </tr>
