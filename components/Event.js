@@ -13,6 +13,16 @@ export default function Events(props) {
   const [isPressed, setIsPressed] = useState(false); // Tracks whether attendance tracking has started
   const [isPastDue, setIsPastDue] = useState(false); // Tracks if the event is past due
   const [message, setMessage] = useState("");
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const attendeesPerPage = 5; // Number of attendees per page
+  const totalPages = Math.ceil(attendees.length / attendeesPerPage);
+
+  // Function to paginate attendees
+  const paginateAttendees = () => {
+    const startIndex = (currentPage - 1) * attendeesPerPage;
+    return attendees.slice(startIndex, startIndex + attendeesPerPage);
+  };
 
   // Function to format time from "HH:mm" to "h:mm AM/PM"
   const formatTime = (timeString) => {
@@ -30,6 +40,24 @@ export default function Events(props) {
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Function to format full timestamp "YYYY-MM-DD HH:mm:ss" in the table
+  const formatTimestamp = (timestampString) => {
+    if (!timestampString || typeof timestampString !== "string") {
+      return "Not checked in";
+    }
+    const [datePart, timePart] = timestampString.split(" ");
+    if (!datePart || !timePart) {
+      return "Not checked in";
+    }
+    const formattedDate = formatDate(datePart);
+    const formattedTime = formatTime(timePart);
+    // Validate if formattedDate and formattedTime are correctly parsed
+    if (formattedDate === "Invalid Date" || formattedTime === "Invalid Date") {
+      return "Not checked in";
+    }
+    return `${formattedDate} ${formattedTime}`;
   };
 
   // Handle CSV export
@@ -273,16 +301,11 @@ export default function Events(props) {
             </tr>
           </thead>
           <tbody>
-            {attendees.length > 0 ? (
-              attendees.map((attendee, index) => (
-                <tr
-                  key={attendee.id}
-                  className="bg-gray-100 hover:bg-gray-200 transition duration-200"
-                >
-                  <td className="border-b border-gray-300 p-4">{index + 1}</td>
-                  <td className="border-b border-gray-300 p-4">
-                    {attendee.id}
-                  </td>
+            {paginateAttendees().length > 0 ? (
+              paginateAttendees().map((attendee, index) => (
+                <tr key={attendee.id} className="bg-gray-100 hover:bg-gray-200 transition duration-200">
+                  <td className="border-b border-gray-300 p-4">{(currentPage - 1) * attendeesPerPage + index + 1}</td>
+                  <td className="border-b border-gray-300 p-4">{attendee.id}</td>
                   <td className=" flex items-center border-b border-gray-300 p-4">
                     <div
                       className={`w-4 h-4 inline-block mr-2 ${
@@ -297,24 +320,40 @@ export default function Events(props) {
                     ></div>
                     {attendee.status || "N/A"}
                   </td>
-                  <td className="border-b border-gray-300 p-4">
-                    {attendee.time || "Not checked in"}
-                  </td>
+                  <td className="border-b border-gray-300 p-4">{formatTimestamp(attendee.time || "Not checked in")}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="4"
-                  className="border-b border-gray-300 p-4 text-center text-gray-500"
-                >
-                  No attendees yet.
-                </td>
+                <td colSpan="4" className="border-b border-gray-300 p-4 text-center text-gray-500">No attendees yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Conditional Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center space-x-2 my-4">
+          <button
+            className="btn btn-sm bg-blue-900 text-white"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="btn btn-sm bg-blue-900 text-white"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {isPastDue && (
         <button
