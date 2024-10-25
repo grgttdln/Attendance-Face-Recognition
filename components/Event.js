@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { collection, getDoc, doc, getDocs } from "firebase/firestore";
+import { collection, getDoc, doc, onSnapshot } from "firebase/firestore"; // Import onSnapshot for real-time updates
 import { db } from "../firebase/config";
 import jsPDF from "jspdf";
-import "jspdf-autotable"; 
+import "jspdf-autotable";
 
 export default function Events(props) {
   const [event, setEvent] = useState(null);
@@ -12,81 +12,63 @@ export default function Events(props) {
   const [error, setError] = useState(null);
   const [isPressed, setIsPressed] = useState(false); // Tracks whether attendance tracking has started
   const [isPastDue, setIsPastDue] = useState(false); // Tracks if the event is past due
+  const [message, setMessage] = useState("");
 
   // Function to format time from "HH:mm" to "h:mm AM/PM"
   const formatTime = (timeString) => {
     const [hours, minutes] = timeString.split(":");
     const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    date.setHours(hours, minutes);
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   };
 
   // Function to format date from "YYYY-MM-DD" to "Month Day, Year"
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
+  // Handle CSV export
   const handleExportCSV = () => {
-    console.log(event);
     if (!event || !event?.name) {
       console.error("Event title is not available");
       return;
     }
-  
-    // Define the CSV header
+
     const headers = ["#", "Name", "Status", "Time"];
-  
-    // Map the attendees to CSV format
     const rows = attendees.map((attendee, index) => [
-      index + 1, // Serial number
-      attendee.id, // Attendee's ID or Name
-      attendee.status || "N/A", // Status (Checked-in or not)
-      attendee.time || "Not checked in", // Time of check-in
+      index + 1,
+      attendee.id,
+      attendee.status || "N/A",
+      attendee.time || "Not checked in",
     ]);
-  
-    // Combine headers and rows
-    const csvContent = [headers, ...rows]
-      .map((e) => e.join(","))
-      .join("\n");
-  
-    // Create a blob with the CSV content
+
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    
-    // Generate the file name: EventName - Attendees.csv
     const fileName = `${event.name} - Attendees.csv`;
-  
-    // Create a download link and trigger it
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", fileName);
-    
-    // Append link to the body (required for Firefox)
     document.body.appendChild(link);
-    
-    // Trigger the download
     link.click();
-    
-    // Clean up and remove the link
     document.body.removeChild(link);
   };
 
+  // Handle PDF export
   const handleExportPDF = () => {
     if (!event || !event?.name) {
       console.error("Event title is not available");
       return;
     }
 
-    // Create a new jsPDF instance
     const doc = new jsPDF();
-
-    // Title of the PDF
     doc.setFontSize(18);
     doc.text(event.name, 20, 20);
-
-    // Event date and time
     doc.setFontSize(12);
     doc.text(`Date: ${formatDate(event.date)}`, 20, 30);
     doc.text(
@@ -95,28 +77,22 @@ export default function Events(props) {
       40
     );
 
-    // Prepare attendees table for the PDF
     const tableData = attendees.map((attendee, index) => [
-      index + 1, // Serial number
-      attendee.id, // Attendee's ID or Name
-      attendee.status || "N/A", // Status (Checked-in or not)
-      attendee.time || "Not checked in", // Time of check-in
+      index + 1,
+      attendee.id,
+      attendee.status || "N/A",
+      attendee.time || "Not checked in",
     ]);
 
-    // Add the table using jsPDF AutoTable plugin
     doc.autoTable({
       head: [["#", "Name", "Status", "Time"]],
       body: tableData,
       startY: 50,
     });
 
-    // Generate the file name: EventName - Attendees.pdf
     const fileName = `${event.name} - Attendees.pdf`;
-
-    // Save the PDF
     doc.save(fileName);
   };
-
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -137,7 +113,6 @@ export default function Events(props) {
             ...eventData,
           });
 
-          // Check if the event is past due or the status is true
           const eventDate = new Date(eventData.date);
           if (eventDate < new Date() || eventData.status === true) {
             setIsPastDue(true);
@@ -153,36 +128,90 @@ export default function Events(props) {
       }
     };
 
-    const fetchAttendees = async () => {
+    const fetchAttendees = () => {
       if (!props.eventId) return;
 
-      try {
-        const attendeesCollection = collection(
-          db,
-          "events",
-          props.eventId,
-          "attendees"
-        );
-        const attendeesSnapshot = await getDocs(attendeesCollection);
-        const attendeesList = attendeesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+      // Use onSnapshot for real-time updates
+      const attendeesCollection = collection(
+        db,
+        "events",
+        props.eventId,
+        "attendees"
+      );
+      const unsubscribe = onSnapshot(
+        attendeesCollection,
+        (snapshot) => {
+          const attendeesList = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setAttendees(attendeesList);
+        },
+        (error) => {
+          console.error("Error fetching attendees: ", error);
+          setError("Failed to load attendees data");
+        }
+      );
 
-        setAttendees(attendeesList);
-      } catch (error) {
-        console.error("Error fetching attendees: ", error);
-        setError("Failed to load attendees data");
-      }
+      return unsubscribe; // Return the unsubscribe function
     };
 
     fetchEvent();
-    fetchAttendees();
+    const unsubscribeAttendees = fetchAttendees();
+
+    return () => unsubscribeAttendees(); // Cleanup on component unmount
   }, [props.eventId]);
 
-  
-  
-  
+  const processAttendanceStart = async () => {
+    console.log("Attendance tracking started");
+    try {
+      const response = await fetch("/api/run_python", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ eventId: event.name, action: "start" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData}`
+        );
+      }
+    } catch (error) {
+      console.error("Error processing attendance:", error);
+      setMessage(`Error: ${error.message}`);
+      setError(`Failed to process attendance: ${error.message}`);
+    }
+  };
+
+  const processAttendanceEnd = async () => {
+    console.log("Attendance tracking ended");
+    try {
+      const response = await fetch("/api/run_python", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "terminate" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("Attendance tracking termination result:", result);
+    } catch (error) {
+      console.error("Error ending attendance:", error);
+      setMessage(`Error: ${error.message}`);
+      setError(`Failed to terminate attendance process: ${error.message}`);
+    }
+  };
 
   if (loading) {
     return (
@@ -204,91 +233,119 @@ export default function Events(props) {
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
       {/* Title */}
       <div className="bg-blue-900 mb-8 shadow-md p-6 rounded-lg flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
-        <h1 className="text-xl font-medium text-white mb-8" style={{ fontFamily: "Poppins" }}>
+        <h1
+          className="text-xl font-medium text-white mb-8"
+          style={{ fontFamily: "Poppins" }}
+        >
           Presenza
         </h1>
 
-        <h1 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: "Poppins" }}>
+        <h1
+          className="text-2xl font-semibold text-white mb-1"
+          style={{ fontFamily: "Poppins" }}
+        >
           {event?.title || props.eventId}
         </h1>
 
         <div className="w-full flex justify-between font-semibold text-white">
-          <p>{formatDate(event?.date) ? formatDate(new Date(event.date).toLocaleDateString()) : "Date not available"}</p>
-          <p>
-            {formatTime(event?.startTime) || "Start Time not available"} - {formatTime(event?.endTime) || "End Time not available"}
-          </p>
+          <p>{formatDate(event?.date) || "Date not available"}</p>
+          <p>{`${
+            formatTime(event?.startTime) || "Start Time not available"
+          } - ${formatTime(event?.endTime) || "End Time not available"}`}</p>
         </div>
       </div>
 
-      {/* Attendees Table */}
-      {isPressed || isPastDue ? (
-        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-medium mb-4" style={{ fontFamily: "Poppins" }}>
-            Attendees
-          </h2>
-          <table className="w-full text-left table-auto border-collapse">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border p-2">#</th>
-                <th className="border p-2">Name</th>
-                <th className="border p-2">Status</th>
-                <th className="border p-2">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendees.length > 0 ? (
-                attendees.map((attendee, index) => (
-                  <tr key={attendee.id} className="bg-gray-100">
-                    <td className="border p-2">{index + 1}</td>
-                    <td className="border p-2">{attendee.id}</td>
-                    <td className="border p-2">{attendee.status || "N/A"}</td>
-                    <td className="border p-2">{attendee.time || "Not checked in"}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="border p-2 text-center">
-                    No attendees yet.
+      {/* Attendees Section */}
+      <div>
+        <h2
+          className="text-lg font-medium mb-4"
+          style={{ fontFamily: "Poppins" }}
+        >
+          Attendees
+        </h2>
+        <table className="w-full text-left table-auto border-collapse shadow-lg rounded-lg overflow-hidden">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border-b-2 border-gray-300 p-4">#</th>
+              <th className="border-b-2 border-gray-300 p-4">Name</th>
+              <th className="border-b-2 border-gray-300 p-4">Status</th>
+              <th className="border-b-2 border-gray-300 p-4">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attendees.length > 0 ? (
+              attendees.map((attendee, index) => (
+                <tr
+                  key={attendee.id}
+                  className="bg-gray-100 hover:bg-gray-200 transition duration-200"
+                >
+                  <td className="border-b border-gray-300 p-4">{index + 1}</td>
+                  <td className="border-b border-gray-300 p-4">
+                    {attendee.id}
+                  </td>
+                  <td className=" flex items-center border-b border-gray-300 p-4">
+                    <div
+                      className={`w-4 h-4 inline-block mr-2 ${
+                        attendee.status === "attended"
+                          ? "bg-green-500"
+                          : attendee.status === "absent"
+                          ? "bg-red-500"
+                          : attendee.status === "late"
+                          ? "bg-yellow-500"
+                          : "bg-gray-500"
+                      }`}
+                    ></div>
+                    {attendee.status || "N/A"}
+                  </td>
+                  <td className="border-b border-gray-300 p-4">
+                    {attendee.time || "Not checked in"}
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="border-b border-gray-300 p-4 text-center text-gray-500"
+                >
+                  No attendees yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {/* Export CSV Button */}
-          {isPastDue && (
-            <button
-              onClick={handleExportCSV}
-              className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
-              style={{ fontFamily: "Poppins" }}
-            >
-              Export CSV
-            </button>
+      {isPastDue && (
+        <button
+          onClick={handleExportCSV}
+          className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
+          style={{ fontFamily: "Poppins" }}
+        >
+          Export CSV
+        </button>
+      )}
 
-            
-          )}
+      {/* Export PDF Button */}
+      {isPastDue && (
+        <button
+          onClick={handleExportPDF}
+          className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
+          style={{ fontFamily: "Poppins" }}
+        >
+          Export as PDF
+        </button>
+      )}
 
-          {/* Export PDF Button */}
-          {isPastDue && (
-            <button
-              onClick={handleExportPDF}
-              className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
-              style={{ fontFamily: "Poppins" }}
-            >
-              Export as PDF
-            </button>
-
-            
-          )}
-        </div>
-      ) : null}
-
-      {/* Start Attendance Tracking Button */}
+      {/* Attendance Control Buttons */}
       {!isPastDue && !isPressed && (
         <button
-          className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out"
+          className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
           style={{ fontFamily: "Poppins" }}
-          onClick={() => setIsPressed(true)}
+          onClick={() => {
+            setIsPressed(true);
+            processAttendanceStart();
+          }}
         >
           Start Attendance Tracking
         </button>
@@ -299,11 +356,17 @@ export default function Events(props) {
         <button
           className="bg-red-600 text-white hover:bg-white hover:text-red-600 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
           style={{ fontFamily: "Poppins" }}
-          onClick={() => setIsPressed(false)}
+          onClick={() => {
+            setIsPressed(false);
+            processAttendanceEnd();
+          }}
         >
           End Event
         </button>
       )}
+
+      {/* Messages */}
+      {message && <div className="mt-4 text-red-600">{message}</div>}
     </div>
   );
 }

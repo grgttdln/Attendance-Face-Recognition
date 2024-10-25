@@ -98,6 +98,48 @@ def mark_attendance(name, event_id):
 
 
 
+
+
+# Check current attendance status from Firestore
+def get_attendance_status(name, event_id):
+    # Firestore document URL for the specific path
+    doc_url = f"{FIRESTORE_URL}/events/{event_id}/attendees/{name}"
+    
+    try:
+        # Make a GET request to Firestore to fetch the attendee's data
+        response = requests.get(f"{doc_url}?key={FIREBASE_API_KEY}")
+        
+        if response.status_code == 200:
+            document = response.json()
+            if 'fields' in document and 'status' in document['fields']:
+                status = document['fields']['status']['stringValue']
+                return status
+            else:
+                print(f"Warning: Status not found for {name}. Assuming 'pending'.")
+                return "pending"  # If no status is found, assume it's pending by default
+        else:
+            print(f"Error retrieving status for {name}: {response.status_code}")
+            return None
+
+    except requests.RequestException as e:
+        print(f"Error connecting to Firestore: {str(e)}")
+        return None
+
+
+# Mark attendance only if status is pending
+def mark_attendance_if_pending(name, event_id):
+    status = get_attendance_status(name, event_id)
+    
+    if status == "pending":
+        print(f"{name} has 'pending' status. Marking attendance.")
+        mark_attendance(name, event_id)
+    elif status is None:
+        print(f"Could not retrieve status for {name}. Skipping.")
+    else:
+        print(f"{name} already marked as {status}. Skipping.")
+
+
+
 def main(event_id):
     # Initialize the video stream and allow the camera sensor
     print(f"Starting video stream for event: {event_id}")
@@ -116,8 +158,11 @@ def main(event_id):
         vs.stop()
         sys.exit(1)
 
+    # Initialize a dictionary to store marked faces
+    marked_faces = {}
 
     # Loop over the frames from the video stream
+    
     while True:
         frame = vs.read()
 
@@ -157,12 +202,20 @@ def main(event_id):
 
                     if matches[best_match_index]:
                         name = known_face_names[best_match_index]
-                        mark_attendance(name, event_id)
+                        # Mark attendance if not already marked
+                        if name not in marked_faces:
+                            mark_attendance_if_pending(name, event_id)
+                            marked_faces[name] = True  # Add the name to the marked_faces dictionary
+                        box_color = (0, 255, 0)  # Green box for known attendees
+                    else:
+                        name = "Unknown"
+                        box_color = (0, 0, 255)  # Red box for unknown faces (not attendees)
 
-                        text = f"{name}: {confidence*100:.2f}%"
-                        y = startY - 10 if startY - 10 > 10 else startY + 10
-                        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-                        cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+                    # Always display the bounding box and name with confidence
+                    text = f"{name}: {confidence * 100:.2f}%"
+                    y = startY - 10 if startY - 10 > 10 else startY + 10
+                    cv2.rectangle(frame, (startX, startY), (endX, endY), box_color, 2)
+                    cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 2)
 
         cv2.imshow("Attendance System", frame)
         key = cv2.waitKey(1) & 0xFF
@@ -172,6 +225,10 @@ def main(event_id):
 
     cv2.destroyAllWindows()
     vs.stop()
+
+
+
+
 
 
 if __name__ == "__main__":
