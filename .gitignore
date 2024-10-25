@@ -1,3 +1,7 @@
+# known faces
+face_recognition/known_faces/
+
+
 # Node.js dependencies
 node_modules/
 npm-debug.log
