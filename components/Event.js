@@ -141,8 +141,9 @@ export default function Events(props) {
             ...eventData,
           });
 
-          const eventDate = new Date(eventData.date);
-          if (eventDate < new Date() || eventData.status === true) {
+          const currentDate = new Date();
+          const eventDate = new Date(`${eventData.date} ${eventData.endTime}`);
+          if (eventDate < currentDate || eventData.status === true) {
             setIsPastDue(true);
           }
         } else {

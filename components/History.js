@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore"; // Firestore imports
 import { db } from "../firebase/config"; // Your Firebase configuration
-import Link from "next/link"; // Import Link for navigation
 import Cards from "./Cards"; // Import the Cards component
 
 const formatTime = (timeString) => {
@@ -23,12 +21,24 @@ export default function History() {
       try {
         const eventsCollection = collection(db, "events");
         const eventSnapshot = await getDocs(eventsCollection);
+
         const eventList = eventSnapshot.docs
           .map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }))
-          .filter((event) => new Date(event.date) < new Date() && event.status === true);
+          .filter((event) => {
+            // Combine date and time for accurate comparison
+            const eventDateTime = new Date(`${event.date}T${event.endTime}`);
+            return eventDateTime < new Date() && event.status === true;
+          })
+          .sort((a, b) => {
+            // Sort by date and time in descending order
+            const dateA = new Date(`${a.date}T${a.endTime}`);
+            const dateB = new Date(`${b.date}T${b.endTime}`);
+            return dateB - dateA;
+          });
+
         setPastEvents(eventList);
       } catch (error) {
         console.error("Error fetching event history: ", error);
@@ -42,30 +52,16 @@ export default function History() {
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
       {/* Title */}
       <div className="bg-blue-900 mb-10 shadow-md p-6 rounded-xl flex flex-col items-start text-left border border-gray-200 hover:shadow-xl transition-shadow">
-        <h1
-          className="text-1xl font-medium text-white mb-3"
-          style={{ fontFamily: "Poppins" }}
-        >
+        <h1 className="text-1xl font-medium text-white mb-3" style={{ fontFamily: "Poppins" }}>
           Presenza
         </h1>
-        <h1
-          className="text-2xl font-semibold text-white"
-          style={{ fontFamily: "Poppins" }}
-        >
+        <h1 className="text-2xl font-semibold text-white" style={{ fontFamily: "Poppins" }}>
           Event History
         </h1>
       </div>
 
       {/* Past Events Section */}
       <div className="bg-transparent">
-        {/* <h2
-          className="text-2xl font-semibold text-blue-800 mb-6"
-          style={{ fontFamily: "Poppins" }}
-        >
-          Your Past Events
-        </h2> */}
-
-        {/* Events List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pastEvents.length > 0 ? (
             pastEvents.map((event) => (

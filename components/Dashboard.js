@@ -27,7 +27,7 @@ export default function Dashboard() {
     fetchEvents();
   }, []);
 
-  // Get current date
+  // Get current date and time
   const currentDate = new Date();
 
   return (
@@ -73,15 +73,14 @@ export default function Dashboard() {
 
         {/* Events List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Event Card */}
           {events &&
             events
               .filter((event) => {
-                // Filter for upcoming events (date in the future) and status is false
-                const eventDate = new Date(event.date);
-                return eventDate >= currentDate && event.status === false;
+                // Combine date and start time
+                const eventDateTime = new Date(`${event.date} ${event.endTime}`);
+                return eventDateTime > currentDate && event.status === false;
               })
-              .sort((a, b) => new Date(a.date) - new Date(b.date)) // Sort by date
+              .sort((a, b) => new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`)) // Sort by date and time
               .slice(0, 3) // Get the first 3 after sorting
               .map((event) => (
                 <Cards
