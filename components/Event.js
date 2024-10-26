@@ -228,6 +228,9 @@ export default function Events(props) {
   
 
   const processAttendanceEnd = async () => {
+    const confirmed = window.confirm("Are you sure you want to end the event?");
+    if (!confirmed) return;
+
     console.log("Attendance tracking ended");
 
     try {
