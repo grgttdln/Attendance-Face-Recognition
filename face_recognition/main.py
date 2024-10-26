@@ -187,7 +187,10 @@ def main(event_id):
             print("Failed to capture frame from camera. Exiting...")
             break
 
-        frame = cv2.resize(frame, (1280, 720))
+        frame = cv2.flip(frame, 1)
+        
+        frame = cv2.resize(frame, (960, 720))
+
         (h, w) = frame.shape[:2]
         blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
         net.setInput(blob)
@@ -213,7 +216,7 @@ def main(event_id):
 
                 if len(face_encoding) > 0:
                     face_encoding = face_encoding[0]
-                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.50)
                     face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
                     best_match_index = np.argmin(face_distances)
 
