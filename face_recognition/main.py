@@ -71,14 +71,20 @@ def load_known_faces(known_faces_dir=known_faces_dir):
     return known_face_encodings, known_face_names
 
 
+GRACE_PERIOD_MINUTES = 15
+
 def mark_attendance(name, event_id, start_datetime):
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
+    # Set time range for on-time and late attendance
+    on_time_start = start_datetime - timedelta(minutes=GRACE_PERIOD_MINUTES)
+    on_time_end = start_datetime + timedelta(minutes=GRACE_PERIOD_MINUTES)
+
     # Determine attendance status based on date and time comparison
-    attendance_status = "attended"
-    # Only mark "late" if current timestamp is later than the start_datetime
-    if start_datetime and timestamp > start_datetime:
+    if on_time_start <= timestamp <= on_time_end:
+        attendance_status = "attended"
+    elif timestamp > on_time_end:
         attendance_status = "late"
 
     # Document fields to update

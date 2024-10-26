@@ -17,16 +17,25 @@ export default function Events(props) {
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPressed, setIsPressed] = useState(false); // Tracks whether attendance tracking has started
-  const [isPastDue, setIsPastDue] = useState(false); // Tracks if the event is past due
+  const [isPressed, setIsPressed] = useState(false);
+  const [isPastDue, setIsPastDue] = useState(false);
   const [isUpcoming, setIsUpcoming] = useState(false);
   const [message, setMessage] = useState("");
+  const [canStartTracking, setCanStartTracking] = useState(false);
   const router = useRouter();
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const attendeesPerPage = 5; // Number of attendees per page
+  const attendeesPerPage = 5;
   const totalPages = Math.ceil(attendees.length / attendeesPerPage);
+
+  // Function to check if current time is within the allowed window
+  const checkTimeWindow = (eventStartTime, eventDate) => {
+    const currentTime = new Date();
+    const eventDateTime = new Date(`${eventDate} ${eventStartTime}`);
+    const fifteenMinutesBefore = new Date(eventDateTime.getTime() - 15 * 60000);
+    return currentTime >= fifteenMinutesBefore && currentTime <= eventDateTime;
+  };
 
   // Function to paginate attendees
   const paginateAttendees = () => {
@@ -52,7 +61,7 @@ export default function Events(props) {
     });
   };
 
-  // Function to format full timestamp "YYYY-MM-DD HH:mm:ss" in the table
+  // Function to format full timestamp
   const formatTimestamp = (timestampString) => {
     if (!timestampString || typeof timestampString !== "string") {
       return "Not checked in";
@@ -63,7 +72,6 @@ export default function Events(props) {
     }
     const formattedDate = formatDate(datePart);
     const formattedTime = formatTime(timePart);
-    // Validate if formattedDate and formattedTime are correctly parsed
     if (formattedDate === "Invalid Date" || formattedTime === "Invalid Date") {
       return "Not checked in";
     }
@@ -154,9 +162,18 @@ export default function Events(props) {
           const currentDate = new Date();
           const eventStartDate = new Date(`${eventData.date} ${eventData.startTime}`);
           const eventEndDate = new Date(`${eventData.date} ${eventData.endTime}`);
-          
-          setIsUpcoming(currentDate < eventStartDate); // Event is upcoming if current date is before the event start date
+          const fifteenMinutesBefore = new Date(eventStartDate.getTime() - 15 * 60000);
+
+          setIsUpcoming(currentDate < fifteenMinutesBefore);
           setIsPastDue(currentDate > eventEndDate || eventData.status === true);
+          setCanStartTracking(checkTimeWindow(eventData.startTime, eventData.date));
+
+          // Set up interval to check time window every minute
+          const intervalId = setInterval(() => {
+            setCanStartTracking(checkTimeWindow(eventData.startTime, eventData.date));
+          }, 60000);
+
+          return () => clearInterval(intervalId);
         } else {
           setError("Event not found");
         }
@@ -171,7 +188,6 @@ export default function Events(props) {
     const fetchAttendees = () => {
       if (!props.eventId) return;
 
-      // Use onSnapshot for real-time updates
       const attendeesCollection = collection(
         db,
         "events",
@@ -193,13 +209,17 @@ export default function Events(props) {
         }
       );
 
-      return unsubscribe; // Return the unsubscribe function
+      return unsubscribe;
     };
 
     fetchEvent();
     const unsubscribeAttendees = fetchAttendees();
 
-    return () => unsubscribeAttendees(); // Cleanup on component unmount
+    return () => {
+      if (unsubscribeAttendees) {
+        unsubscribeAttendees();
+      }
+    };
   }, [props.eventId]);
 
   const processAttendanceStart = async () => {
@@ -226,8 +246,6 @@ export default function Events(props) {
     }
   };
 
-  
-
   const processAttendanceEnd = async () => {
     const confirmed = window.confirm("Are you sure you want to end the event?");
     if (!confirmed) return;
@@ -235,12 +253,10 @@ export default function Events(props) {
     console.log("Attendance tracking ended");
 
     try {
-      // Fetch all attendees that still have a "pending" or empty status
       const pendingAttendees = attendees.filter(
         (attendee) => !attendee.status || attendee.status === "pending"
       );
 
-      // Initialize batch operation
       const batch = writeBatch(db);
       pendingAttendees.forEach((attendee) => {
         const attendeeRef = doc(
@@ -253,14 +269,11 @@ export default function Events(props) {
         batch.update(attendeeRef, { status: "absent" });
       });
 
-      // Update the event status to true
       const eventRef = doc(db, "events", props.eventId);
       batch.update(eventRef, { status: true });
 
-      // Commit batch update to Firestore
       await batch.commit();
 
-      // Send request to terminate attendance tracking in the Python API
       const response = await fetch("/api/run_python", {
         method: "POST",
         headers: {
@@ -279,7 +292,6 @@ export default function Events(props) {
       const result = await response.json();
       console.log("Attendance tracking termination result:", result);
 
-      // Redirect to /Events after successful termination
       router.push("/events");
     } catch (error) {
       console.error("Error ending attendance:", error);
@@ -288,22 +300,21 @@ export default function Events(props) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+        <div className="text-blue-900">Loading...</div>
+      </div>
+    );
+  }
 
-    if (loading) {
-      return (
-        <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
-          <div className="text-blue-900">Loading...</div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
-          <div className="text-red-600">{error}</div>
-        </div>
-      );
-    }
+  if (error) {
+    return (
+      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+        <div className="text-red-600">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
