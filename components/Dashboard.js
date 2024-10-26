@@ -62,26 +62,31 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Upcoming Events Section */}
+      {/* Ongoing Events Section */}
       <div className="bg-transparent">
         <h2
-          className="text-2xl font-semibold text-blue-800 mb-6"
-          style={{ fontFamily: "Poppins" }}
-        >
-          Your Upcoming Events
+            className="text-2xl font-semibold text-blue-800 mb-6"
+            style={{ fontFamily: "Poppins" }}
+          >
+            Ongoing Events
         </h2>
 
-        {/* Events List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events &&
             events
               .filter((event) => {
-                // Combine date and start time
-                const eventDateTime = new Date(`${event.date} ${event.endTime}`);
-                return eventDateTime > currentDate && event.status === false;
+                // Combine date and time for comparison
+                const eventStart = new Date(`${event.date} ${event.startTime}`);
+                const eventEnd = new Date(`${event.date} ${event.endTime}`);
+
+                // Check if current time is between event start and end time
+                return (
+                  currentDate >= eventStart &&
+                  currentDate <= eventEnd &&
+                  event.status === false
+                );
               })
               .sort((a, b) => new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`)) // Sort by date and time
-              .slice(0, 3) // Get the first 3 after sorting
               .map((event) => (
                 <Cards
                   key={event.id}
@@ -92,6 +97,59 @@ export default function Dashboard() {
                   date={event.date}
                 />
               ))}
+
+          {/* Display message if there are no ongoing events */}
+          {events.filter((event) => {
+            const eventStart = new Date(`${event.date} ${event.startTime}`);
+            const eventEnd = new Date(`${event.date} ${event.endTime}`);
+            return (
+              currentDate >= eventStart &&
+              currentDate <= eventEnd &&
+              event.status === false
+            );
+          }).length === 0 && (
+            <p className="text-gray-500 text-lg col-span-full text-center">
+              No ongoing events.
+            </p>
+          )}
+        </div>
+
+        <h2
+          className="text-2xl font-semibold text-blue-800 mb-6 mt-10"
+          style={{ fontFamily: "Poppins" }}
+        >
+          Your Upcoming Events
+        </h2>
+
+        {/* Upcoming Events List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events &&
+            events
+              .filter((event) => {
+                const eventStart = new Date(`${event.date} ${event.startTime}`);
+                return eventStart > currentDate && event.status === false;
+              })
+              .sort((a, b) => new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`)) // Sort by date and time
+              .map((event) => (
+                <Cards
+                  key={event.id}
+                  title={event.name}
+                  eTime={event.endTime}
+                  sTime={event.startTime}
+                  status={event.status}
+                  date={event.date}
+                />
+              ))}
+
+          {/* Display message if there are no upcoming events */}
+          {events.filter((event) => {
+            const eventStart = new Date(`${event.date} ${event.startTime}`);
+            return eventStart > currentDate && event.status === false;
+          }).length === 0 && (
+            <p className="text-gray-500 text-lg col-span-full text-center">
+              No upcoming events.
+            </p>
+          )}
         </div>
       </div>
     </div>

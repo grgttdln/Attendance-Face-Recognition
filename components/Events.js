@@ -8,47 +8,51 @@ export default function Events() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    const fetchAndCheckEvents = async () => {
-      try {
-        const eventsCollection = collection(db, "events");
-        const eventSnapshot = await getDocs(eventsCollection);
-        const eventList = eventSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        const currentDate = new Date();
-
-        const updatedEventList = await Promise.all(
-          eventList.map(async (event) => {
-            const eventDateTime = new Date(`${event.date} ${event.endTime}`);
-            if (eventDateTime < currentDate && event.status === false) {
-              const eventDocRef = doc(db, "events", event.id);
-              await updateDoc(eventDocRef, { status: true });
-              return { ...event, status: true };
-            }
-            return event;
-          })
-        );
-
-        const filteredEvents = updatedEventList
-          .filter(
-            (event) =>
-              new Date(`${event.date} ${event.endTime}`) >= currentDate &&
-              event.status === false
-          )
-          .sort((a, b) => 
-            new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`)
+      const fetchAndCheckEvents = async () => {
+        try {
+          const eventsCollection = collection(db, "events");
+          const eventSnapshot = await getDocs(eventsCollection);
+          const eventList = eventSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+  
+          const currentDate = new Date();
+  
+          // Update events that have ended by checking if currentDate is after event's end time
+          const updatedEventList = await Promise.all(
+            eventList.map(async (event) => {
+              const eventEndDateTime = new Date(`${event.date} ${event.endTime}`);
+              
+              // If event has ended and status is still false, update status to true
+              if (eventEndDateTime < currentDate && event.status === false) {
+                const eventDocRef = doc(db, "events", event.id);
+                await updateDoc(eventDocRef, { status: true });
+                return { ...event, status: true };
+              }
+              return event;
+            })
           );
-
-        setEvents(filteredEvents);
-      } catch (error) {
-        console.error("Error fetching or updating events: ", error);
-      }
-    };
-
-    fetchAndCheckEvents();
-  }, []);
+  
+          // Filter events to show only ongoing or upcoming ones (status: false)
+          const filteredEvents = updatedEventList
+            .filter(
+              (event) =>
+                new Date(`${event.date} ${event.endTime}`) >= currentDate &&
+                event.status === false
+            )
+            .sort((a, b) =>
+              new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`)
+            );
+  
+          setEvents(filteredEvents);
+        } catch (error) {
+          console.error("Error fetching or updating events: ", error);
+        }
+      };
+  
+      fetchAndCheckEvents();
+    }, []);
 
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">
@@ -57,7 +61,7 @@ export default function Events() {
           Presenza
         </h1>
         <h1 className="text-2xl font-semibold text-white" style={{ fontFamily: "Poppins" }}>
-          All Upcoming Events
+          All Upcoming and Ongoing Events
         </h1>
       </div>
 
