@@ -1,6 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { collection, getDoc, doc, onSnapshot } from "firebase/firestore"; // Import onSnapshot for real-time updates
+import {
+  collection,
+  getDoc,
+  doc,
+  onSnapshot,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "../firebase/config";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -147,6 +153,7 @@ export default function Events(props) {
             setIsPastDue(true);
           }
         } else {
+          console.log(props.eventId);
           setError("Event not found");
         }
       } catch (error) {
@@ -218,6 +225,27 @@ export default function Events(props) {
   const processAttendanceEnd = async () => {
     console.log("Attendance tracking ended");
     try {
+      // Fetch all attendees that still have a "pending" or empty status
+      const pendingAttendees = attendees.filter(
+        (attendee) => !attendee.status || attendee.status === "pending"
+      );
+
+      // Initialize batch operation
+      const batch = writeBatch(db);
+      pendingAttendees.forEach((attendee) => {
+        const attendeeRef = doc(
+          db,
+          "events",
+          props.eventId,
+          "attendees",
+          attendee.id
+        );
+        batch.update(attendeeRef, { status: "absent" });
+      });
+
+      // Commit batch update to Firestore
+      await batch.commit();
+
       const response = await fetch("/api/run_python", {
         method: "POST",
         headers: {
@@ -304,9 +332,16 @@ export default function Events(props) {
           <tbody>
             {paginateAttendees().length > 0 ? (
               paginateAttendees().map((attendee, index) => (
-                <tr key={attendee.id} className="bg-gray-100 hover:bg-gray-200 transition duration-200">
-                  <td className="border-b border-gray-300 p-4">{(currentPage - 1) * attendeesPerPage + index + 1}</td>
-                  <td className="border-b border-gray-300 p-4">{attendee.id}</td>
+                <tr
+                  key={attendee.id}
+                  className="bg-gray-100 hover:bg-gray-200 transition duration-200"
+                >
+                  <td className="border-b border-gray-300 p-4">
+                    {(currentPage - 1) * attendeesPerPage + index + 1}
+                  </td>
+                  <td className="border-b border-gray-300 p-4">
+                    {attendee.id}
+                  </td>
                   <td className=" flex items-center border-b border-gray-300 p-4">
                     <div
                       className={`w-4 h-4 inline-block mr-2 ${
@@ -321,12 +356,19 @@ export default function Events(props) {
                     ></div>
                     {attendee.status || "N/A"}
                   </td>
-                  <td className="border-b border-gray-300 p-4">{formatTimestamp(attendee.time || "Not checked in")}</td>
+                  <td className="border-b border-gray-300 p-4">
+                    {formatTimestamp(attendee.time || "Not checked in")}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="border-b border-gray-300 p-4 text-center text-gray-500">No attendees yet.</td>
+                <td
+                  colSpan="4"
+                  className="border-b border-gray-300 p-4 text-center text-gray-500"
+                >
+                  No attendees yet.
+                </td>
               </tr>
             )}
           </tbody>

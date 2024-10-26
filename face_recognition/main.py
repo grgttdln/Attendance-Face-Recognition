@@ -234,6 +234,7 @@ def main(event_id):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         event_id = sys.argv[1]
+        
         try:
             main(event_id)
         except Exception as e:

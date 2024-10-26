@@ -7,7 +7,9 @@ import { doc, getDoc } from "firebase/firestore"; // Changed imports
 
 export default function Home() {
   const pathname = usePathname();
-  const lastSegment = pathname.split("/").pop().replace("%20", " ");
+  console.log(pathname);
+  const lastSegment = decodeURIComponent(pathname.split("/").pop());
+  console.log(lastSegment);
 
   return (
     <div className="flex">

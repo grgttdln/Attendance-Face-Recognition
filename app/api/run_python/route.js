@@ -20,7 +20,7 @@ export async function POST(request) {
         "main.py"
       );
       pythonProcess = exec(
-        `python3 ${scriptPath} ${eventId}`,
+        `python3 ${scriptPath} "${eventId}"`,
         (error, stdout, stderr) => {
           if (error) {
             console.error(`Error executing Python script: ${error.message}`);
