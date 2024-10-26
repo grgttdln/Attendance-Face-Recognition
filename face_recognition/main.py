@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from imutils.video import VideoStream
 import os
 import face_recognition
 import requests
 import sys
+
 
 # Firebase configuration
 FIREBASE_API_KEY = 'AIzaSyB9VquWx1IFE3Vs2111T0YFghC6zgrqbg8'
@@ -70,15 +71,21 @@ def load_known_faces(known_faces_dir=known_faces_dir):
     return known_face_encodings, known_face_names
 
 
-# Mark attendance by updating Firestore document
-def mark_attendance(name, event_id):
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+# Mark attendance with late check if needed
+def mark_attendance(name, event_id, start_time):
+    timestamp = datetime.now()
+    timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Determine attendance status based on time comparison
+    attendance_status = "attended"
+    if start_time and timestamp > start_time:
+        attendance_status = "late"
 
     # Document fields to update
     data = {
         "fields": {
-            "status": {"stringValue": "attended"},
-            "time": {"stringValue": timestamp}
+            "status": {"stringValue": attendance_status},
+            "time": {"stringValue": timestamp_str}
         }
     }
 
@@ -89,7 +96,7 @@ def mark_attendance(name, event_id):
         # Update the document (PATCH request)
         response = requests.patch(f"{doc_url}?key={FIREBASE_API_KEY}&updateMask.fieldPaths=status&updateMask.fieldPaths=time", json=data)
         if response.status_code == 200:
-            print(f"Updated attendance for {name} in event {event_id} with status: attended, time: {timestamp}")
+            print(f"Updated attendance for {name} in event {event_id} with status: {attendance_status}, time: {timestamp_str}")
         else:
             print(f"Error updating attendance: {response.status_code} - {response.content}")
     
@@ -100,44 +107,54 @@ def mark_attendance(name, event_id):
 
 
 
-# Check current attendance status from Firestore
+
 def get_attendance_status(name, event_id):
     # Firestore document URL for the specific path
     doc_url = f"{FIRESTORE_URL}/events/{event_id}/attendees/{name}"
-    
+    event_url = f"{FIRESTORE_URL}/events/{event_id}"
+
     try:
-        # Make a GET request to Firestore to fetch the attendee's data
+        # Make a GET request to Firestore to fetch the attendee's data and event data
         response = requests.get(f"{doc_url}?key={FIREBASE_API_KEY}")
+        event_response = requests.get(f"{event_url}?key={FIREBASE_API_KEY}")
         
-        if response.status_code == 200:
+        if response.status_code == 200 and event_response.status_code == 200:
             document = response.json()
-            if 'fields' in document and 'status' in document['fields']:
-                status = document['fields']['status']['stringValue']
-                return status
+            event_document = event_response.json()
+
+            # Get attendance status
+            status = document['fields'].get('status', {}).get('stringValue', "pending")
+
+            # Parse start time string and set it to today’s date
+            if 'fields' in event_document and 'startTime' in event_document['fields']:
+                start_time_str = event_document['fields']['startTime']['stringValue']
+                today_date = datetime.now().date()
+                start_time = datetime.strptime(start_time_str, '%H:%M').replace(year=today_date.year, month=today_date.month, day=today_date.day)
             else:
-                print(f"Warning: Status not found for {name}. Assuming 'pending'.")
-                return "pending"  # If no status is found, assume it's pending by default
+                print(f"Warning: Start time not found for event {event_id}.")
+                start_time = None
+
+            return status, start_time
         else:
-            print(f"Error retrieving status for {name}: {response.status_code}")
-            return None
+            print(f"Error retrieving data for {name}: {response.status_code} or event: {event_response.status_code}")
+            return None, None
 
     except requests.RequestException as e:
         print(f"Error connecting to Firestore: {str(e)}")
-        return None
+        return None, None
 
 
-# Mark attendance only if status is pending
+# Mark attendance only if status is pending, with late check
 def mark_attendance_if_pending(name, event_id):
-    status = get_attendance_status(name, event_id)
+    status, start_time = get_attendance_status(name, event_id)
     
     if status == "pending":
         print(f"{name} has 'pending' status. Marking attendance.")
-        mark_attendance(name, event_id)
+        mark_attendance(name, event_id, start_time)
     elif status is None:
         print(f"Could not retrieve status for {name}. Skipping.")
     else:
         print(f"{name} already marked as {status}. Skipping.")
-
 
 
 def main(event_id):

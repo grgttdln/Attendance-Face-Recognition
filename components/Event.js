@@ -10,6 +10,7 @@ import {
 import { db } from "../firebase/config";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { useRouter } from "next/navigation";
 
 export default function Events(props) {
   const [event, setEvent] = useState(null);
@@ -19,6 +20,8 @@ export default function Events(props) {
   const [isPressed, setIsPressed] = useState(false); // Tracks whether attendance tracking has started
   const [isPastDue, setIsPastDue] = useState(false); // Tracks if the event is past due
   const [message, setMessage] = useState("");
+  const router = useRouter();
+
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const attendeesPerPage = 5; // Number of attendees per page
@@ -222,8 +225,11 @@ export default function Events(props) {
     }
   };
 
+  
+
   const processAttendanceEnd = async () => {
     console.log("Attendance tracking ended");
+
     try {
       // Fetch all attendees that still have a "pending" or empty status
       const pendingAttendees = attendees.filter(
@@ -243,9 +249,14 @@ export default function Events(props) {
         batch.update(attendeeRef, { status: "absent" });
       });
 
+      // Update the event status to true
+      const eventRef = doc(db, "events", props.eventId);
+      batch.update(eventRef, { status: true });
+
       // Commit batch update to Firestore
       await batch.commit();
 
+      // Send request to terminate attendance tracking in the Python API
       const response = await fetch("/api/run_python", {
         method: "POST",
         headers: {
@@ -263,6 +274,9 @@ export default function Events(props) {
 
       const result = await response.json();
       console.log("Attendance tracking termination result:", result);
+
+      // Redirect to /Events after successful termination
+      router.push("/events");
     } catch (error) {
       console.error("Error ending attendance:", error);
       setMessage(`Error: ${error.message}`);
@@ -270,21 +284,22 @@ export default function Events(props) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
-        <div className="text-blue-900">Loading...</div>
-      </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
-        <div className="text-red-600">{error}</div>
-      </div>
-    );
-  }
+    if (loading) {
+      return (
+        <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+          <div className="text-blue-900">Loading...</div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen flex justify-center items-center">
+          <div className="text-red-600">{error}</div>
+        </div>
+      );
+    }
 
   return (
     <div className="flex-1 p-10 pt-16 bg-gray-100 min-h-screen">

@@ -30,7 +30,7 @@ export default function History() {
           .filter((event) => {
             // Combine date and time for accurate comparison
             const eventDateTime = new Date(`${event.date}T${event.endTime}`);
-            return eventDateTime < new Date() && event.status === true;
+            return eventDateTime < new Date() || event.status === true;
           })
           .sort((a, b) => {
             // Sort by date and time in descending order
