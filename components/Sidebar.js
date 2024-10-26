@@ -20,8 +20,12 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Placeholder div to occupy sidebar space on large screens */}
+      <div className="hidden lg:block w-72 min-h-screen"></div>
+      <div className="lg:hidden block top-0 left-0 h-full p-4 bg-transparent"></div>
+
       {/* Toggle Button for Small Screens */}
-      <div className="lg:hidden p-4">
+      <div className="lg:hidden fixed top-0 left-0 h-full p-4 bg-white z-50 shadow-md">
         <button onClick={toggleSidebar} className="text-blue-900 text-3xl">
           <FiMenu />
         </button>
@@ -29,8 +33,8 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <div
-        className={`min-h-screen bg-white shadow-lg rounded-tr-3xl rounded-br-3xl p-6 flex flex-col fixed lg:static z-50 transition-transform duration-300
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 w-72`}
+        className={`min-h-screen bg-white shadow-lg rounded-tr-3xl rounded-br-3xl p-6 flex flex-col fixed lg:fixed z-50 transition-transform duration-300
+        ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 w-72 lg:top-0 lg:left-0`}
       >
         {/* Logo and Sidebar Title */}
         <div className="flex items-center space-x-4">
