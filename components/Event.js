@@ -19,6 +19,7 @@ export default function Events(props) {
   const [error, setError] = useState(null);
   const [isPressed, setIsPressed] = useState(false); // Tracks whether attendance tracking has started
   const [isPastDue, setIsPastDue] = useState(false); // Tracks if the event is past due
+  const [isUpcoming, setIsUpcoming] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter();
 
@@ -151,12 +152,12 @@ export default function Events(props) {
           });
 
           const currentDate = new Date();
-          const eventDate = new Date(`${eventData.date} ${eventData.endTime}`);
-          if (eventDate < currentDate || eventData.status === true) {
-            setIsPastDue(true);
-          }
+          const eventStartDate = new Date(`${eventData.date} ${eventData.startTime}`);
+          const eventEndDate = new Date(`${eventData.date} ${eventData.endTime}`);
+          
+          setIsUpcoming(currentDate < eventStartDate); // Event is upcoming if current date is before the event start date
+          setIsPastDue(currentDate > eventEndDate || eventData.status === true);
         } else {
-          console.log(props.eventId);
           setError("Event not found");
         }
       } catch (error) {
@@ -438,18 +439,26 @@ export default function Events(props) {
       )}
 
       {/* Attendance Control Buttons */}
-      {!isPastDue && !isPressed && (
+      {!isPastDue && (
         <button
-          className="bg-blue-900 text-white hover:bg-white hover:text-blue-900 w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4"
+          className={`w-full lg:w-full text-lg py-3 rounded-lg font-medium transition-colors duration-300 ease-in-out mt-4 ${
+            isUpcoming ? "bg-gray-400 text-gray-700 cursor-not-allowed" : "bg-blue-900 text-white hover:bg-white hover:text-blue-900"
+          }`}
           style={{ fontFamily: "Poppins" }}
           onClick={() => {
-            setIsPressed(true);
             processAttendanceStart();
+            setIsPressed(true);
           }}
+          disabled={isPressed || isPastDue || isUpcoming}
         >
-          Start Attendance Tracking
+          {isUpcoming
+            ? "Attendance Tracking Not Yet Available"
+            : isPressed
+            ? "Tracking in Progress"
+            : "Start Attendance Tracking"}
         </button>
       )}
+
 
       {/* End Event Button */}
       {isPressed && !isPastDue && (

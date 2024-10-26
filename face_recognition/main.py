@@ -71,14 +71,14 @@ def load_known_faces(known_faces_dir=known_faces_dir):
     return known_face_encodings, known_face_names
 
 
-# Mark attendance with late check if needed
-def mark_attendance(name, event_id, start_time):
+def mark_attendance(name, event_id, start_datetime):
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Determine attendance status based on time comparison
+    # Determine attendance status based on date and time comparison
     attendance_status = "attended"
-    if start_time and timestamp > start_time:
+    # Only mark "late" if current timestamp is later than the start_datetime
+    if start_datetime and timestamp > start_datetime:
         attendance_status = "late"
 
     # Document fields to update
@@ -91,7 +91,7 @@ def mark_attendance(name, event_id, start_time):
 
     # Firestore document URL for the specific path
     doc_url = f"{FIRESTORE_URL}/events/{event_id}/attendees/{name}"
-    
+
     try:
         # Update the document (PATCH request)
         response = requests.patch(f"{doc_url}?key={FIREBASE_API_KEY}&updateMask.fieldPaths=status&updateMask.fieldPaths=time", json=data)
@@ -99,13 +99,9 @@ def mark_attendance(name, event_id, start_time):
             print(f"Updated attendance for {name} in event {event_id} with status: {attendance_status}, time: {timestamp_str}")
         else:
             print(f"Error updating attendance: {response.status_code} - {response.content}")
-    
+
     except requests.RequestException as e:
         print(f"Error connecting to Firestore: {str(e)}")
-
-
-
-
 
 
 def get_attendance_status(name, event_id):
@@ -125,16 +121,14 @@ def get_attendance_status(name, event_id):
             # Get attendance status
             status = document['fields'].get('status', {}).get('stringValue', "pending")
 
-            # Parse start time string and set it to today’s date
-            if 'fields' in event_document and 'startTime' in event_document['fields']:
-                start_time_str = event_document['fields']['startTime']['stringValue']
-                today_date = datetime.now().date()
-                start_time = datetime.strptime(start_time_str, '%H:%M').replace(year=today_date.year, month=today_date.month, day=today_date.day)
-            else:
-                print(f"Warning: Start time not found for event {event_id}.")
-                start_time = None
+            # Retrieve the date and start time separately
+            date_str = event_document['fields']['date']['stringValue']
+            start_time_str = event_document['fields']['startTime']['stringValue']
 
-            return status, start_time
+            # Combine the date and start time into a single datetime object
+            start_datetime = datetime.strptime(f"{date_str} {start_time_str}", '%Y-%m-%d %H:%M')
+
+            return status, start_datetime
         else:
             print(f"Error retrieving data for {name}: {response.status_code} or event: {event_response.status_code}")
             return None, None
@@ -146,11 +140,11 @@ def get_attendance_status(name, event_id):
 
 # Mark attendance only if status is pending, with late check
 def mark_attendance_if_pending(name, event_id):
-    status, start_time = get_attendance_status(name, event_id)
+    status, start_datetime = get_attendance_status(name, event_id)
     
     if status == "pending":
         print(f"{name} has 'pending' status. Marking attendance.")
-        mark_attendance(name, event_id, start_time)
+        mark_attendance(name, event_id, start_datetime)
     elif status is None:
         print(f"Could not retrieve status for {name}. Skipping.")
     else:
