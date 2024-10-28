@@ -144,17 +144,25 @@ def get_attendance_status(name, event_id):
         return None, None
 
 
-# Mark attendance only if status is pending, with late check
+# Updated mark_attendance_if_pending to mark late attendees based on on_time_start + GRACE_PERIOD_MINUTES
 def mark_attendance_if_pending(name, event_id):
     status, start_datetime = get_attendance_status(name, event_id)
     
     if status == "pending":
         print(f"{name} has 'pending' status. Marking attendance.")
         mark_attendance(name, event_id, start_datetime)
+
+        # Calculate the on-time end based on the grace period from the event's start time
+        on_time_end = start_datetime + timedelta(minutes=GRACE_PERIOD_MINUTES)
+        current_time = datetime.now()
+        is_late = current_time > on_time_end  # True if current time is beyond the grace period
+        return is_late
     elif status is None:
         print(f"Could not retrieve status for {name}. Skipping.")
     else:
         print(f"{name} already marked as {status}. Skipping.")
+    
+    return False  # Not late if already marked
 
 
 def main(event_id):
@@ -179,7 +187,6 @@ def main(event_id):
     marked_faces = {}
 
     # Loop over the frames from the video stream
-    
     while True:
         frame = vs.read()
 
@@ -196,6 +203,7 @@ def main(event_id):
         net.setInput(blob)
         detections = net.forward()
 
+        # Inside the main loop for face recognition
         for i in range(0, detections.shape[2]):
             confidence = detections[0, 0, i, 2]
 
@@ -222,20 +230,33 @@ def main(event_id):
 
                     if matches[best_match_index]:
                         name = known_face_names[best_match_index]
-                        # Mark attendance if not already marked
+
+                        # Check if the person has already been marked
                         if name not in marked_faces:
-                            mark_attendance_if_pending(name, event_id)
-                            marked_faces[name] = True  # Add the name to the marked_faces dictionary
-                        box_color = (0, 255, 0)  # Green box for known attendees
+                            # Determine if late based on the attendance function
+                            is_late = mark_attendance_if_pending(name, event_id)
+                            marked_faces[name] = is_late  # Store the lateness status for future frames
+
+                        # Set box color and label based on lateness status
+                        if marked_faces[name]:  # If marked as late
+                            box_color = (0, 255, 255)  # Yellow box for late attendees
+                            text = f"LATE: {name}"
+                        else:
+                            box_color = (0, 255, 0)  # Green box for on-time attendees
+                            text = f"ON TIME: {name}"
                     else:
                         name = "Unknown"
-                        box_color = (0, 0, 255)  # Red box for unknown faces (not attendees)
+                        box_color = (0, 0, 255)  # Red box for unknown faces
+                        text = f"{name}: {confidence * 100:.2f}%"
 
-                    # Always display the bounding box and name with confidence
-                    text = f"{name}: {confidence * 100:.2f}%"
+                    # Set larger font scale and thicker line
+                    font_scale = 0.8
+                    font_thickness = 2
+
+                    # Display bounding box and name with confidence
                     y = startY - 10 if startY - 10 > 10 else startY + 10
                     cv2.rectangle(frame, (startX, startY), (endX, endY), box_color, 2)
-                    cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 2)
+                    cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, box_color, font_thickness)
 
         cv2.imshow("Attendance System", frame)
         key = cv2.waitKey(1) & 0xFF
