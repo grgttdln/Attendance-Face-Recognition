@@ -110,6 +110,30 @@ def mark_attendance(name, event_id, start_datetime):
         print(f"Error connecting to Firestore: {str(e)}")
 
 
+#  User-Friendly Countdown Timer
+def display_countdown_timer(frame, start_datetime, grace_period_minutes):
+    current_time = datetime.now()
+    time_remaining = start_datetime + timedelta(minutes=grace_period_minutes) - current_time
+    seconds_remaining = max(0, int(time_remaining.total_seconds()))  # Ensure non-negative value
+
+    # Format the time as MM:SS
+    minutes = seconds_remaining // 60
+    seconds = seconds_remaining % 60
+    timer_text = f"Time Remaining: {minutes:02}:{seconds:02}"
+
+    # Display the countdown timer
+    cv2.putText(frame, timer_text, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+# Attendance Status Display Board
+def display_attendance_status_board(frame, marked_faces):
+    x, y = 20, 40  # Starting position
+    cv2.putText(frame, "Attendance Status", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    for i, (name, is_late) in enumerate(marked_faces.items()):
+        status_text = "LATE" if is_late else "ON TIME"
+        color = (0, 255, 255) if is_late else (0, 255, 0)  # Yellow for late, green for on time
+        cv2.putText(frame, f"{name}: {status_text}", (x, y + (i + 1) * 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+
 def get_attendance_status(name, event_id):
     # Firestore document URL for the specific path
     doc_url = f"{FIRESTORE_URL}/events/{event_id}/attendees/{name}"
@@ -165,6 +189,7 @@ def mark_attendance_if_pending(name, event_id):
     return False  # Not late if already marked
 
 
+
 def main(event_id):
     # Initialize the video stream and allow the camera sensor
     print(f"Starting video stream for event: {event_id}")
@@ -185,10 +210,18 @@ def main(event_id):
 
     # Initialize a dictionary to store marked faces
     marked_faces = {}
+    status, start_datetime = get_attendance_status(known_face_names[0], event_id)
+
+
+    if status is None or start_datetime is None:
+        print(f"Error retrieving event information. Exiting...")
+        vs.stop()
+        sys.exit(1)
 
     # Loop over the frames from the video stream
     while True:
         frame = vs.read()
+        
 
         if frame is None:
             print("Failed to capture frame from camera. Exiting...")
@@ -258,6 +291,14 @@ def main(event_id):
                     cv2.rectangle(frame, (startX, startY), (endX, endY), box_color, 2)
                     cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, box_color, font_thickness)
 
+
+        # Overlay the attendance status board
+        display_attendance_status_board(frame, marked_faces)
+
+        # Overlay the countdown timer
+        display_countdown_timer(frame, start_datetime, GRACE_PERIOD_MINUTES)
+
+
         cv2.imshow("Attendance System", frame)
         key = cv2.waitKey(1) & 0xFF
 
@@ -266,7 +307,6 @@ def main(event_id):
 
     cv2.destroyAllWindows()
     vs.stop()
-
 
 
 
