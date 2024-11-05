@@ -14,6 +14,8 @@ FIREBASE_API_KEY = 'AIzaSyB9VquWx1IFE3Vs2111T0YFghC6zgrqbg8'
 FIREBASE_PROJECT_ID = 'attendance-bf03b'
 FIREBASE_COLLECTION = 'attendance'
 
+GRACE_PERIOD_MINUTES = 15
+
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
 known_faces_dir = os.path.join(current_dir, "known_faces")
@@ -71,8 +73,6 @@ def load_known_faces(known_faces_dir=known_faces_dir):
     return known_face_encodings, known_face_names
 
 
-GRACE_PERIOD_MINUTES = 15
-
 def mark_attendance(name, event_id, start_datetime):
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
@@ -110,7 +110,7 @@ def mark_attendance(name, event_id, start_datetime):
         print(f"Error connecting to Firestore: {str(e)}")
 
 
-#  User-Friendly Countdown Timer
+# Countdown Timer
 def display_countdown_timer(frame, start_datetime, grace_period_minutes):
     current_time = datetime.now()
     time_remaining = start_datetime + timedelta(minutes=grace_period_minutes) - current_time
@@ -123,6 +123,7 @@ def display_countdown_timer(frame, start_datetime, grace_period_minutes):
 
     # Display the countdown timer
     cv2.putText(frame, timer_text, (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
 
 # Attendance Status Display Board
 def display_attendance_status_board(frame, marked_faces):
@@ -307,8 +308,6 @@ def main(event_id):
 
     cv2.destroyAllWindows()
     vs.stop()
-
-
 
 
 
