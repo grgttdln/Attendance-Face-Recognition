@@ -7,12 +7,14 @@ import os
 import face_recognition
 import requests
 import sys
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # Firebase configuration
-FIREBASE_API_KEY = 'AIzaSyB9VquWx1IFE3Vs2111T0YFghC6zgrqbg8'
-FIREBASE_PROJECT_ID = 'attendance-bf03b'
-FIREBASE_COLLECTION = 'attendance'
+FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
+FIREBASE_PROJECT_ID = os.getenv('FIREBASE_PROJECT_ID')
+FIREBASE_COLLECTION = os.getenv('FIREBASE_COLLECTION')
 
 GRACE_PERIOD_MINUTES = 15
 
